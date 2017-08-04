@@ -19,11 +19,21 @@ public class Tile : MonoBehaviour {
 
     public void OnMouseDown()
     {
-        if (available)
+        if (available && gameManager.GetState() == GameManager.State.PlayerTurn)
         {
-            spriteRenderer.sprite = gameManager.GetState() == GameManager.State.XTurn ? cross : zero;
+            TakeTile();
+        }
+    }
+
+    public void TakeTile()
+    {
+            spriteRenderer.sprite = gameManager.GetPieces() == GameManager.Pieces.Cross ? cross : zero;
             gameManager.SetTile(id);
             available = false;
-        } 
+    }
+
+    public bool IsAvailable()
+    {
+        return available;
     }
 }

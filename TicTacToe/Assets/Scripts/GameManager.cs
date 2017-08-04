@@ -5,12 +5,9 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour {
 
-    public enum State { Idle, XTurn, OTurn, XWin, OWin, Draw };
-
-    private int[] tiles = new int[9];
-    private int lastAvailable = 9;
-    private bool playerTurn = true;
-    private int[,] winners = {
+    public enum State { Idle, PlayerTurn, AITurn, PlayerWin, AIWin, Draw };
+    public enum Pieces { Cross, Zero};
+    public int[,] winners = {
         {0, 1, 2 },
         {3, 4, 5 },
         {6, 7, 8 },
@@ -21,7 +18,15 @@ public class GameManager : MonoBehaviour {
         {2, 4, 6 }
     };
 
+    private int[] tiles = new int[9];
+    private int lastAvailable = 9;
+    private bool playerTurn = true;
+    
+
     private State currentState;
+    private Pieces currentPieces;
+
+    private AIController ai;
     
     private void SetState(State newState)
     {
@@ -30,26 +35,32 @@ public class GameManager : MonoBehaviour {
     // Use this for initialization
 	void Start () {
         SetState(State.Idle);
+        currentPieces = Pieces.Cross;
+        ai = FindObjectOfType<AIController>();
 	}
 	
 	// Update is called once per frame
 	void Update () {
-        Debug.Log(CheckWinner());
 
         switch (currentState)
         {
             case State.Idle:
 
-                Debug.Log("Idle State");
-                SetState(State.XTurn);
+                if (playerTurn)
+                {
+                    SetState(State.PlayerTurn);
+                }
+                else
+                {
+                    SetState(State.AITurn);
+                }
                 break;
 
-            case State.XTurn:
-                Debug.Log("XTurn State");
+            case State.PlayerTurn:
 
                 if (CheckWinner())
                 {
-                    SetState(State.XWin);
+                    SetState(State.PlayerWin);
                 }
                 else if (lastAvailable - CountAvailable() == 1)
                 {
@@ -61,40 +72,39 @@ public class GameManager : MonoBehaviour {
                     }
                     else
                     {
-                        SetState(State.OTurn);
+                        SwitchPieces();
+                        SetState(State.AITurn);
                     }
                 }
-                
-
                 break;
-            case State.OTurn:
-                Debug.Log("OTurn State");
+
+            case State.AITurn:
+
+                ai.MakeTurn();
+                lastAvailable--;
 
                 if (CheckWinner())
                 {
-                    SetState(State.OWin);
+                    SetState(State.AIWin);
                 }
-                else if (lastAvailable - CountAvailable() == 1)
+                else if (CountAvailable() == 0)
                 {
-                    lastAvailable--;
-
-                    if (CountAvailable() == 0)
-                    {
-                        SetState(State.Draw);
-                    }
-                    else
-                    {
-                        SetState(State.XTurn);
-                    }
+                    SetState(State.Draw);
+                }
+                else
+                {
+                    SwitchPieces();
+                    SetState(State.PlayerTurn);
                 }
                 break;
-            case State.XWin:
 
-                Debug.Log("XWin state");
+            case State.PlayerWin:
+
+                Debug.Log("PlayerWin state");
                 break;
-            case State.OWin:
+            case State.AIWin:
 
-                Debug.Log("OWin state");
+                Debug.Log("AIwin state");
                 break;
             case State.Draw:
 
@@ -105,9 +115,21 @@ public class GameManager : MonoBehaviour {
         }
     }
 
+    private void SwitchPieces()
+    {
+        if (currentPieces == Pieces.Cross)
+        {
+            currentPieces = Pieces.Zero;
+        }
+        else
+        {
+            currentPieces = Pieces.Cross;
+        }
+    }
+
     public void SetTile (int index)
     {
-        tiles[index] = State.XTurn == currentState ? 1 : 2;
+        tiles[index] = Pieces.Cross == currentPieces ? 1 : 2;
     }
 
     private bool CheckWinner()
@@ -144,5 +166,15 @@ public class GameManager : MonoBehaviour {
     public State GetState()
     {
         return currentState;
+    }
+
+    public Pieces GetPieces()
+    {
+        return currentPieces;
+    }
+
+    public int[] GetTiles()
+    {
+        return tiles;
     }
 }
