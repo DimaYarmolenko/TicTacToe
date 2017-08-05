@@ -12,12 +12,12 @@ public class DifficultyManager : MonoBehaviour {
         canvas = FindObjectOfType<CanvasGroup>();
     }
 
+    //difficulty panel pop-up
     public void Activate()
     {
         canvas.alpha = 1;
         canvas.interactable = true;
         canvas.blocksRaycasts = true;
-        //Debug.Log("Activate is called");
     }
 
     public void SetDifficulty(int diff)

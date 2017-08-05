@@ -12,6 +12,7 @@ public static class PlayerPrefsManager {
 
     public static void SetDifficulty(int diff)
     {
+        //validation check
         if (diff >= 1 && diff <= 3)
         {
             PlayerPrefs.SetInt(DIFFICULTY_KEY, diff);

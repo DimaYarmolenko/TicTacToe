@@ -6,7 +6,9 @@ using UnityEngine;
 public class GameManager : MonoBehaviour {
 
     public enum State { Idle, PlayerTurn, AITurn, PlayerWin, AIWin, Draw };
+    //X or O
     public enum Pieces { Cross, Zero};
+    //all possible win conditions
     public int[,] winners = {
         {0, 1, 2 },
         {3, 4, 5 },
@@ -18,8 +20,11 @@ public class GameManager : MonoBehaviour {
         {2, 4, 6 }
     };
 
+    //contains the state of playboard
     private int[] tiles = new int[9];
+    //amount of available tiles before player triggered any tile
     private int lastAvailable = 9;
+    //who goes first
     private bool playerTurn = true;
     
 
@@ -27,25 +32,32 @@ public class GameManager : MonoBehaviour {
     private Pieces currentPieces;
 
     private AIController ai;
+    private ScoreManager scoreManager;
+    //panel that shows result of the game
+    private ResultPanel resPan;
     
     private void SetState(State newState)
     {
         currentState = newState;
     }
-    // Use this for initialization
+    
+
 	void Start () {
         SetState(State.Idle);
         currentPieces = Pieces.Cross;
         ai = FindObjectOfType<AIController>();
+        scoreManager = FindObjectOfType<ScoreManager>();
+        resPan = FindObjectOfType<ResultPanel>();
 	}
 	
-	// Update is called once per frame
+	
 	void Update () {
 
         switch (currentState)
         {
             case State.Idle:
 
+                //chose who goes first depending on playerTurn
                 if (playerTurn)
                 {
                     SetState(State.PlayerTurn);
@@ -62,16 +74,18 @@ public class GameManager : MonoBehaviour {
                 {
                     SetState(State.PlayerWin);
                 }
-                else if (lastAvailable - CountAvailable() == 1)
+                else if (lastAvailable - CountAvailable() == 1) //check if any tile was pressed
                 {
                     lastAvailable--;
 
+                    //no more tiles to continues, no winner
                     if (CountAvailable() == 0)
                     {
                         SetState(State.Draw);
                     }
                     else
                     {
+                        //switch X to O or vice versa
                         SwitchPieces();
                         SetState(State.AITurn);
                     }
@@ -100,21 +114,25 @@ public class GameManager : MonoBehaviour {
 
             case State.PlayerWin:
 
-                Debug.Log("PlayerWin state");
+                resPan.ActivatePanel("Victory");
                 break;
+
             case State.AIWin:
 
-                Debug.Log("AIwin state");
+                resPan.ActivatePanel("Defeat");
                 break;
+
             case State.Draw:
 
-                Debug.Log("Draw State");
+                resPan.ActivatePanel("Draw");
                 break;
+
             default:
                 break;
         }
     }
 
+    //sitch currently played pieces to opposite (X to O || O to X)
     private void SwitchPieces()
     {
         if (currentPieces == Pieces.Cross)
@@ -127,11 +145,13 @@ public class GameManager : MonoBehaviour {
         }
     }
 
+    //insert incoming from the tile value
     public void SetTile (int index)
     {
         tiles[index] = Pieces.Cross == currentPieces ? 1 : 2;
     }
 
+    //loop through winners[] to check if any combination is filled completely
     private bool CheckWinner()
     {
         for (int i = 0; i < 8; i++)
@@ -176,5 +196,65 @@ public class GameManager : MonoBehaviour {
     public int[] GetTiles()
     {
         return tiles;
+    }
+
+    //back to initial values to start new round, changing turn oder depending on the previous result
+    public void Restart()
+    {
+        //updating playerprefs values
+        scoreManager.AddResult(currentState);
+
+        
+        currentPieces = Pieces.Cross;
+        tiles = new int[9];
+        lastAvailable = 9;
+
+        //who goes first next round
+        SetNextPlayer();
+        //updating scoreboxes
+        scoreManager.UpdateScores();
+
+        foreach (Tile tile in FindObjectsOfType<Tile>())
+        {
+            tile.ResetTile();
+        }
+
+        
+
+        SetState(State.Idle);
+        //removing the result panel
+        resPan.DeactivatePanel();
+    }
+
+    //who's gonna start next round
+    private void SetNextPlayer()
+    {
+        switch (currentState)
+        {
+            case State.PlayerWin:
+
+                playerTurn = true;
+                break;
+
+            case State.AIWin:
+
+                playerTurn = false;
+                break;
+
+            case State.Draw:
+
+                if (playerTurn)
+                {
+                    playerTurn = false;
+                }
+                else
+                {
+                    playerTurn = true;
+                }
+                break;
+
+            default:
+                break;
+        }
     }
 }

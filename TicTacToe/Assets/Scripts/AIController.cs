@@ -5,12 +5,16 @@ using UnityEngine;
 
 public class AIController : MonoBehaviour {
 
+    //set of gametiles in scene
     public Tile[] tiles;
 
     private GameManager gm;
+    //playerprefs difficulty
     private int difficulty;
+    //what pieces AI have to play
     private GameManager.Pieces piece;
 
+    //strategy to follow
     private List<int> strat = new List<int>();
 	
     
@@ -19,14 +23,10 @@ public class AIController : MonoBehaviour {
         gm = FindObjectOfType<GameManager>();
         difficulty = PlayerPrefsManager.GetDifficulty();
 	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
 
     public void MakeTurn()
     {
+        //type of turn depending on difficulty
         switch (difficulty)
         {
             case 1:
@@ -38,7 +38,7 @@ public class AIController : MonoBehaviour {
                 break;
 
             case 3:
-                Test();
+                BlockingMove();
                 break;
 
             default:
@@ -46,10 +46,12 @@ public class AIController : MonoBehaviour {
         }
     }
 
+    //random move on any available tile
     private void DoAny()
     {
         List<Tile> availableTiles = new List<Tile>();
 
+        //loop through tiles to find available ones
         foreach (Tile tile in tiles)
         {
             if (tile.IsAvailable())
@@ -58,13 +60,12 @@ public class AIController : MonoBehaviour {
             }
         }
 
-        if (availableTiles.Count != 0)
-        {
-            System.Random rnd = new System.Random();
-            availableTiles[rnd.Next(0, availableTiles.Count)].TakeTile();
-        }
+        System.Random rnd = new System.Random();
+        //taking random available tile
+        availableTiles[rnd.Next(0, availableTiles.Count)].TakeTile();
     }
 
+    //random winning strat, if not available choosing new strat
     private void DoUsingStrat()
     {
         if (strat.Count == 0)
@@ -72,6 +73,7 @@ public class AIController : MonoBehaviour {
             PickStrat();
         }
 
+        //picing first available position int chosen strat
         for (int i = 0; i < strat.Count; i++)
         {
             if (tiles[strat[i]].IsAvailable())
@@ -81,30 +83,33 @@ public class AIController : MonoBehaviour {
             }
         }
 
+        //pick a random tile if chosen strat has got no available tiles
         DoAny();
+        //clear current strat to find new next turn
         strat.Clear();
     }
 
+    //tries to block  the most dangerous players strat, not quite impossible though
     private void BlockingMove()
     {
-        for (int i = 0; i < 8; i++)
-        {
+        FindDangerStrat();
 
+        //loop through chosen dangerous player's strat to take available tile
+        foreach (int item in strat)
+        {
+            if (tiles[item].IsAvailable())
+            {
+                tiles[item].TakeTile();
+                strat.Clear();
+                return;
+            }
         }
+
+        //take random available tile if draw is the only possible outcome
+        DoAny();
     }
 
-    private void Test()
-    {
-        tiles[0].TakeTile();
-        tiles[3].TakeTile();
-        tiles[6].TakeTile();
-
-        foreach (Tile tile in tiles)
-        {
-            Debug.Log(tile.id);
-        }
-    }
-
+    //picking random strat from GameManager.winners[]
     private void PickStrat()
     {
         System.Random rnd = new System.Random();
@@ -114,5 +119,68 @@ public class AIController : MonoBehaviour {
         strat.Add(gm.winners[i, 0]);
         strat.Add(gm.winners[i, 1]);
         strat.Add(gm.winners[i, 2]);
+    }
+
+    //picking strat from GameManager.winners[] using index parameter
+    private void PickStrat(int index)
+    {
+        strat.Add(gm.winners[index, 0]);
+        strat.Add(gm.winners[index, 1]);
+        strat.Add(gm.winners[index, 2]);
+    }
+
+    //finds strat in GameManager.winners[] that has the most occupied tiles by player
+    private void FindDangerStrat()
+    {
+        //index of the result strat
+        int dangerIndex = 0;
+        //occupied tiles by player in result strat
+        int dangerValue = 0;
+
+        //GameManager.winners[] loop
+        for (int i = 0; i < 8; i++)
+        {
+            //occupied tiles in strat counters
+            int opponentTiles = 0, friendlyTiles = 0;
+            //1 for cross; 2 for zero
+            int opponentValue = 0, friendValue = 0;
+
+            if (gm.GetPieces() == GameManager.Pieces.Cross)
+            {
+                opponentValue = 2;
+                friendValue = 1;
+            }
+            else
+            {
+                opponentValue = 1;
+                friendValue = 2;
+            }
+            
+            //sum up tiles entries both for ai and player
+            for (int j = 0; j < 3; j++)
+            {
+                if (gm.GetTiles()[gm.winners[i, j]] == opponentValue)
+                {
+                    opponentTiles++;
+                }
+                else if (gm.GetTiles()[gm.winners[i, j]] == friendValue)
+                {
+                    friendlyTiles++;
+                }
+            }
+
+            //if strat has got player tile and has got no ai tiles, no reason to block already blocked strat
+            if (opponentTiles >= 1 && friendlyTiles == 0)
+            {
+                //if current strat >= dangerous than last most dangerous strat
+                if (opponentTiles >= dangerValue)
+                {
+                    dangerValue = opponentTiles;
+                    dangerIndex = i;
+                }
+            }
+        }
+
+        PickStrat(dangerIndex);
     }
 }
