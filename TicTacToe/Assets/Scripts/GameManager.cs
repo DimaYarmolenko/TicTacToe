@@ -9,15 +9,16 @@ public class GameManager : MonoBehaviour {
     //X or O
     public enum Pieces { Cross, Zero};
     //all possible win conditions
-    public int[,] winners = {
-        {0, 1, 2 },
-        {3, 4, 5 },
-        {6, 7, 8 },
-        {0, 3, 6 },
-        {1, 4, 7 },
-        {2, 5, 8 },
-        {0, 4, 8 },
-        {2, 4, 6 }
+    public List<int[]> winners = new List<int[]>()
+    {
+        new int[] {0, 1, 2 },
+        new int[] {3, 4, 5 },
+        new int[] {6, 7, 8 },
+        new int[] {0, 3, 6 },
+        new int[] {1, 4, 7 },
+        new int[] {2, 5, 8 },
+        new int[] {0, 4, 8 },
+        new int[] {2, 4, 6 }
     };
 
     //contains the state of playboard
@@ -154,11 +155,11 @@ public class GameManager : MonoBehaviour {
     //loop through winners[] to check if any combination is filled completely
     private bool CheckWinner()
     {
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < winners.Count; i++)
         {
-            if (tiles[winners[i,0]] == tiles[winners[i,1]] && tiles[winners[i,1]] == tiles[winners[i,2]])
+            if (tiles[winners[i][0]] == tiles[winners[i][1]] && tiles[winners[i][1]] == tiles[winners[i][2]])
             {
-                if (tiles[winners[i,0]]!= 0)
+                if (tiles[winners[i][0]]!= 0)
                 {
                     return true;
                 }

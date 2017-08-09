@@ -114,31 +114,33 @@ public class AIController : MonoBehaviour {
     {
         System.Random rnd = new System.Random();
 
-        int i = rnd.Next(0,9);
+        int i = rnd.Next(0,gm.winners.Count);
 
-        strat.Add(gm.winners[i, 0]);
-        strat.Add(gm.winners[i, 1]);
-        strat.Add(gm.winners[i, 2]);
+        for (int j = 0; j < gm.winners[i].Length; j++)
+        {
+            strat.Add(gm.winners[i][j]);
+        }
     }
 
     //picking strat from GameManager.winners[] using index parameter
     private void PickStrat(int index)
     {
-        strat.Add(gm.winners[index, 0]);
-        strat.Add(gm.winners[index, 1]);
-        strat.Add(gm.winners[index, 2]);
+        for (int j = 0; j < gm.winners[index].Length; j++)
+        {
+            strat.Add(gm.winners[index][j]);
+        }
     }
 
     //finds strat in GameManager.winners[] that has the most occupied tiles by player
     private void FindDangerStrat()
     {
         //index of the result strat
-        int dangerIndex = 0;
+        int dangerIndex = 0, winnerIndex = 0;
         //occupied tiles by player in result strat
-        int dangerValue = 0;
+        int dangerValue = 0, winnerValue = 0;
 
         //GameManager.winners[] loop
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < gm.winners.Count; i++)
         {
             //occupied tiles in strat counters
             int opponentTiles = 0, friendlyTiles = 0;
@@ -157,13 +159,13 @@ public class AIController : MonoBehaviour {
             }
             
             //sum up tiles entries both for ai and player
-            for (int j = 0; j < 3; j++)
+            for (int j = 0; j < gm.winners[i].Length; j++)
             {
-                if (gm.GetTiles()[gm.winners[i, j]] == opponentValue)
+                if (gm.GetTiles()[gm.winners[i][j]] == opponentValue)
                 {
                     opponentTiles++;
                 }
-                else if (gm.GetTiles()[gm.winners[i, j]] == friendValue)
+                else if (gm.GetTiles()[gm.winners[i][j]] == friendValue)
                 {
                     friendlyTiles++;
                 }
@@ -179,8 +181,31 @@ public class AIController : MonoBehaviour {
                     dangerIndex = i;
                 }
             }
+
+            //try to find almost completed strat to win
+            //if strat has got AI tile/tiles and has got no player tiles
+            if (friendlyTiles >= 1 && opponentTiles == 0)
+            {
+                //if current strat >= successfull than last most successfull strat
+                if (friendlyTiles >= winnerValue)
+                {
+                    winnerValue = friendlyTiles;
+                    winnerIndex = i;
+                }
+            }
         }
 
-        PickStrat(dangerIndex);
+        //decide to block or to try to win
+        if (winnerValue >= dangerValue)
+        {
+            Debug.Log("win strat, winValue: " + winnerValue.ToString() + " || dangerValue: " + dangerValue.ToString());
+            PickStrat(winnerIndex);
+        }
+        else
+        {
+            Debug.Log("block strat, winValue: " + winnerValue.ToString() + " || dangerValue: " + dangerValue.ToString());
+            PickStrat(dangerIndex);
+        }
+        
     }
 }
